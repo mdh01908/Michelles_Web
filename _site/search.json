@@ -1,0 +1,16 @@
+[
+  {
+    "objectID": "index.html",
+    "href": "index.html",
+    "title": "Final Project Data Science (PM566)",
+    "section": "",
+    "text": "Figure 1.\nThis is an interactive table of the relevant variables used in the analysis, for all subjects. You can search and organize the data by category to familiarize yourself with the dataset.\n\n\n\n\n\n\n\n\n\nFigure 2.\nThis interactive bar plot graphs the proportional interest in participating in clinical trials by Income, Education Level, English Proficiency, and Help Understanding Medical Literature. There are clear trends indicating that the lower the Income or Education level, the less interested subjects are in research. There is a similar trend that lower levels of English Proficiency and knowledge of medical literature is associated with lower levels of interest. You can double click on one of the interest categories to remove it and isolate the responses at that level.\nIf you, for example, double click on ‘Not at all interest’ you will be able to see that there is a large difference i the proportional interest between those who do not speak english at all and those that speak some to fluent. This suggests that those with no English knowledge are the least by far to participate in research\n\n\n\n\n\n\n\n\nFigure 3.\nThis interactive heap-map shows Perceived Benefits and Perceived Risks by Education Level and English Proficiency. Education Level is the left column [Perceived Benefits by Education level in the top left, Perceived Risk by Education level in the bottom left] and English Proficiency is the right column [Perceived Benefits by English Proficiency in the top right, Perceived Risk by English Proficiency in the bottom right].\nYou can zoom in and out of the plots, drag the plots up and down to view the different combinations. If you hover over any square it will tell you the x y and z statistics for that cell.\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\n\nFigure 4.\nThis an interactive map of the US colored by average interest level by state. This provides a visual of how interest in clinical research varies geographically. You can hover over each state to view their statistics.\n\n\n\n\n\n\n\n\nFigure 5.\nThe plot below shows a scatter plot of the average interest in clinical trial vs average income by State. This interactive scatter plot allows you to hover over each point and see the exact values for the average interest and income and name of that state. There is no clear relationship between income and interest by state."
+  },
+  {
+    "objectID": "about.html",
+    "href": "about.html",
+    "title": "PDF Link to Report",
+    "section": "",
+    "text": "Please clink on the link below to download the PDF of my report:\nDownload PDF"
+  }
+]

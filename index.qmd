@@ -1,11 +1,606 @@
 ---
-title: "MH_Final_Website"
+title: "Final Project Data Science (PM566)"
+author: "Michelle Hernandez"
+output: 
+    html_document:
+        toc: TRUE
+        toc_float: TRUE
+execute:
+  echo: false
 ---
 
-This is a Quarto website.
+```{r, message=FALSE, warning=FALSE, results='hide', include=FALSE}
+library(data.table)
+library(ggplot2)
+library(tidytext)
+library(readr)
+library(dplyr)
+library(readxl)
+library(leaflet)
+library(DescTools)
+library(superheat)
+library(tidyr)
+library(plotly)
+dat <- read_excel("DataSurvey_cleanup.xlsx")
 
-To learn more about Quarto websites visit <https://quarto.org/docs/websites>.
+#unique(dat$interest)
+dat <- dat %>%
+  filter(!is.na(interest)) %>%
+  mutate(interest = recode(interest,
+                           "0t at All Interested" = 0,
+                           "0t Very Interested" = 1,
+                           "Somewhat Interested"    = 2,
+                           "Interested"    = 3,
+                           "Very Interested"  = 4,
+                           .default = 5  # 5 there shouldnt be 5s, NO 5s
+  ))
 
-```{r}
-1 + 1
+#unique(dat$EmpStat)
+dat <- dat %>% 
+  filter(!is.na(EmpStat)) %>%
+  mutate(EmpStat = recode(EmpStat,
+                          "Unemployed" = 0,
+                          "Part-time (<35 hours/week)" = 1,
+                          "Full-time (35+ hours/week)" = 2,
+                          "Student" = 3,
+                          "Retired" = 4,
+                          "Homemaker" = 5,
+                          "Disabled" = 6, 
+                          .default = 7  # there should be no 7
+  ))
+
+#unique(dat$AnnualIncome)
+dat <- dat %>% 
+  filter(!is.na(AnnualIncome)) %>%
+  mutate(AnnualIncome = recode(AnnualIncome,
+                               "Less than $10,000" = 1,
+                               "$10,001 - $40,000"  = 2,
+                               "$40,001 - $80,000" = 3,
+                               "$80,001 - $100,000" = 4,
+                               "$100,001 - $120,000" = 5,
+                               "$120,000 or more" = 6,
+                               .default = 0  # 0 here is no income
+  ))
+
+#unique(dat$Ed)
+dat <- dat %>% 
+  filter(!is.na(Ed)) %>%
+  mutate(Ed = recode(Ed,
+                     "8th grade or less"   = 0,
+                     "Some high school, but did 0t graduate"  = 1,
+                     "High school graduate or GED"  = 2,
+                     "Associate degree"  = 3,
+                     "Bachelor's degree (B.A., B.S., etc.)"  = 4,
+                     "Master's degree (MA, MBA, etc.)"  = 5,
+                     "Doctorate (PhD, MD, etc.)"  = 6,
+                     .default = 7  #there should be no 7
+  ))
+
+#unique(dat$LivingSit)
+dat <- dat %>% 
+  filter(!is.na(LivingSit)) %>%
+  mutate(LivingSit = recode(LivingSit,
+                            "I am homeless/live in a shelter"   = 0,
+                            "I rent"   = 1,
+                            "I or someone in my household owns the home without a mortgage"  = 2,
+                            "I or someone in my household owns the home with a mortgage"   = 3,
+                            .default = 4  # there should be no 4s
+  ))
+
+#unique(dat$EnglishProf)
+dat <- dat %>% 
+  filter(!is.na(EnglishProf)) %>%
+  mutate(EnglishProf = recode(EnglishProf,
+                              "0t at All"   = 0,
+                              "0t Well"   = 1,
+                              "Well"   = 2,
+                              "Very Well"  = 3,
+                              .default = 4  # there should be no 4
+  ))
+
+#unique(dat$HelpMedLit)
+dat <- dat %>% 
+  filter(!is.na(HelpMedLit)) %>%
+  mutate(HelpMedLit = recode(HelpMedLit,
+                             "Never"    = 0,
+                             "Rarely"   = 1,
+                             "Sometimes"   = 2,
+                             "Often"    = 3,
+                             "Always" = 4,
+                             .default = 5  # there should be no 5
+  ))
+
+
+#unique(dat$Location)
+dat <- dat %>% 
+  filter(!is.na(Location)) %>%
+  mutate(Location = recode(Location,
+                           "Rural area (0t too many people, large amount of undeveloped/farmland)" = 0,
+                           "Suburbs (Town, outside of a city)" = 1,
+                           "City (A lot of people, city)"    = 2,
+                           .default = 3  # there should be no 3
+  ))
+
+
+#unique(dat$Insurance)
+dat <- dat %>% 
+  filter(!is.na(Insurance)) %>%
+  mutate(Insurance = recode(Insurance,
+                            "0, I am 0T covered by a health insurance plan" = 0,
+                            "1, I have a health insurance plan"  = 1, 
+                            .default = 2  # 2 here is I DONT KNOW
+  ))
+
+
+#unique(dat$InsuranceType)
+dat <- dat %>%
+  filter(!is.na(InsuranceType)) %>%
+  mutate(InsuranceType = recode(InsuranceType,
+                                "I have public insurance"  = 0,
+                                "Private insurance that I buy on my own" = 1,
+                                "Private insurance through my employer" = 2,
+                                "I have a mix of private and public" = 3,
+                                "No Health Insurance or Unknown" = 4,
+                                .default = 5  # should be no 5 now
+  ))
+
+#unique(dat$AffordMed)
+dat <- dat %>% 
+  filter(!is.na(AffordMed)) %>%
+  mutate(AffordMed = recode(AffordMed,
+                            "I am almost never able to afford the medical care I need" = 0,
+                            "I am often 0t able to afford the medical care I need"  = 1, 
+                            "I can usually afford the medical care I need"   = 2,
+                            "I can afford the medical care I need"   = 3,
+                            "I can always afford the medical care I need"  = 4, 
+                            "NA - No Health Insurance" = 5,
+                            .default = 6  # should be no 6 here now, 
+  ))
+
+
+#unique(dat$Gender)
+dat <- dat %>%
+  filter(!is.na(Gender)) %>%
+  mutate(Gender = recode(Gender,
+                         "Male"  = 0, 
+                         "Female"  = 1, 
+                         "Transgender Male/Transgender Man"= 2,
+                         "Transgender Female/Transgender Woman"= 3,
+                         "0n-Binary/Gender 0n-Confirming" = 4, 
+                         "Gender Queer/Gender Fluid"  = 5, 
+                         "A0ther Identity" = 6,
+                         .default = 7  #there should be no 7
+  ))
+
+#unique(dat$Benefit)
+dat <- dat %>%
+  filter(!is.na(Benefit)) %>%
+  mutate(Benefit = recode(Benefit,
+                          "0ne - I do 0t believe there are benefits"= 0, 
+                          "Possibility of receiving monetary compensation"= 1, 
+                          "Possibility of improving my health"= 2,
+                          "Possibility of contributing to science"= 3,
+                          "Possibility of improving treatment for others with my disease/condition" = 4, 
+                          "Possibility of receiving free medication/medical procedures/care"  = 5, 
+                          "Possibility of receiving better medical care and attention"  = 6,
+                          "Possibility of trying a new treatment for my disease/condition"=7,
+                          .default = 8  #is other here
+  ))
+
+#unique(dat$Risk)
+dat <- dat %>%
+  filter(!is.na(Risk)) %>%
+  mutate(Risk = recode(Risk,
+                       "0ne - I do 0t believe there are risks"= 0, 
+                       "There may be side effects/risk to my overall health"= 1, 
+                       "Might receive a placebo / sugar pill"    = 2,
+                       "My private medical information could be made public"      = 3,
+                       "Could only get the study medicine for a limited amount of time" = 4, 
+                       "Might have to stop my current treatments"  = 5, 
+                       "Costs" = 6,
+                       "Fear of Unknown"=7,
+                       .default = 8  #is other, there should be other
+  ))
+
+dat <- dat %>%
+  mutate(total_race = case_when(
+    RaceW == 'White' ~ 0,
+    RaceB == 'Black or African American' ~ 1,
+    RaceA == 'Asian' ~ 2,
+    RacePI == 'Native Hawaiian or Pacific Islander' ~ 3,
+    RaceL == 'Hispanic or Lati0' ~ 4,
+    RaceOther == 'Other - Write In (Required)' ~ 5,
+    Race0Ans == 'Prefer 0t to answer' ~ 6,
+    TRUE ~ NA_integer_
+  ))
+
+
+## continuous variables 
+
+dat <- dat %>% 
+  filter(!is.na(Household)) %>%
+  mutate(Household = recode(Household,
+                            "0" = 0,
+                            "1" = 1,
+                            "2"  = 2,
+                            "3" = 3,
+                            "4" = 4,
+                            "5" = 5, 
+                            "More than 5" = 6, # 6 mean more than 5
+                            .default = 7  # THERE SHOULD BE NO 7
+  ))
+
+dat <- dat %>% 
+  filter(!is.na(Dependents)) %>%
+  mutate(Dependents = recode(Dependents,
+                             "0" = 0,
+                             "1" = 1,
+                             "2"  = 2,
+                             "3" = 3,
+                             "4" = 4,
+                             "5" = 5,
+                             "More than 5" = 6, # 6 mean more than 5
+                             .default = 7  # THERE SHOULD BE NO 7
+  ))
+
+
+
+
+dat$EmpStat_Label <- factor(dat$EmpStat, levels = 0:6, labels = c(
+  "Unemployed", "Part-time", "Full-time", "Student", "Retired", "Homemaker", "Disabled"
+))
+dat$AnnualIncome_Label <- factor(dat$AnnualIncome, levels = 0:6, labels = c(
+  "NA-No Income", "<$10,000", "$10,001-$40,000", "$40,001-$80,000", "$80,001-$100,000", "$100,001-$120,000", ">$120,000"
+))
+dat$Ed_Label <- factor(dat$Ed, levels = 0:6, labels = c(
+  "8th or less", "Some High School", "GED", "Associates", "Bachelors", "Masters", "Doctorate"
+))
+dat$LivingSit_Label <- factor(dat$LivingSit, levels = 0:3, labels = c(
+  "Homeless", "Rent", "Own home w/o mortgage", "Own home w/ mortgage"
+))
+dat$EnglishProf_Label <- factor(dat$EnglishProf, levels = 0:3, labels = c(
+  "Not at All", "Not Well", "Well", "Very Well"
+))
+dat$HelpMedLit_Label <- factor(dat$HelpMedLit, levels = 0:4, labels = c(
+  "Never", "Rarely", "Sometimes", "Often", "Always"
+))
+dat$Location_Label <- factor(dat$Location, levels = 0:2, labels = c(
+  "Rural", "Suburbs", "City"
+))
+dat$Insurance_Label <- factor(dat$Insurance, levels = 0:1, labels = c(
+  "No Health Insurance", "Have Health Insurance"
+))
+dat$InsuranceType_Label <- factor(dat$InsuranceType, levels = 0:4, labels = c(
+  "Public insurance", "Private Insurance that I buy on my own", "Private Insurance Through Employer", "Mix of Private and Public", "No Health Insurance or Unknown"
+))
+dat$AffordMed_Label <- factor(dat$AffordMed, levels = 0:5, labels = c(
+  "Never Able to Afford", "Often Not Able to Afford",  "Can Usually Afford", "Can Afford", "Can Always Afford", "NA - No Health Insurance"
+))
+dat$Gender_Label <- factor(dat$Gender, levels = 0:6, labels = c(
+  "Male", "Female", "Transgender Male", "Transgender Female", "Non-Binary", "Gender Fluid", "Other"
+))
+dat$total_race_Label <- factor(dat$total_race, levels = 0:6, labels = c(
+  "White", "Black", "Asian", "Native Hawaiian or Pacific Islander", "Hispanic", "Other", "No Answer"
+))
+dat$Benefit_Label <- factor(dat$Benefit, levels = 0:8, labels = c(
+  "No Benefits", "Monetary Compensation", "Improving my Health", "Contributing to Science",
+  "Improving Treatment for Others with my Disease/Condition", "Receiving Free Medication/Medical Procedures/Care",
+  "Receiving Better Medical Care and Attention", "Trying a New Treatment for my Disease/Condition",
+  "Other Reason"
+))
+dat$Risk_Label <- factor(dat$Risk, levels = 0:8, labels = c(
+  "No Risks", "Side effects/risk to my overall health", "Might receive placebo", 
+  "Private medical information could be made public",
+  "Only get the study medicine for a limited amount of time", 
+  "Might have to stop my current treatments", "Costs", "Fear of unknown",
+  "Other reason"
+))
+
+dat$interest_Label <- factor(dat$interest, levels = 0:4, labels = c(
+  "Not At All Interested", 
+  "Not Very Interested", 
+  "Somewhat Interested",
+  "Interested", 
+  "Very Interested"
+))
+trial_interest = factor(dat$interest, levels = c(0, 1, 2, 3, 4), labels = c("Not At All Interested", 
+                                                                            "Not Very Interested", 
+                                                                            "Somewhat Interested",
+                                                                            "Interested", 
+                                                                            "Very Interested"))
+
+
+
+
+
+sub_dat = subset(dat, select = c(Gender_Label, State, Age, interest_Label, WorkExp, Household, Dependents, EmpStat_Label, 
+                                 total_race_Label, AnnualIncome_Label, Ed_Label,
+                                 LivingSit_Label, EnglishProf_Label, HelpMedLit_Label, Location_Label,
+                                 Insurance_Label, AffordMed_Label, Benefit_Label, Risk_Label))
+#head(sub_dat)
+
+```
+
+### Figure 1.
+
+This is an interactive table of the relevant variables used in the analysis, for all subjects. You can search and organize the data by category to familiarize yourself with the dataset.
+
+```{r, warning=FALSE}
+library(DT)
+datatable(sub_dat,  options = list(
+  autoWidth = TRUE, 
+  scrollX = TRUE,   
+  width = '100%' ))
+```
+
+### Figure 2.
+
+This interactive bar plot graphs the proportional interest in participating in clinical trials by Income, Education Level, English Proficiency, and Help Understanding Medical Literature. There are clear trends indicating that the lower the Income or Education level, the less interested subjects are in research. There is a similar trend that lower levels of English Proficiency and knowledge of medical literature is associated with lower levels of interest. You can double click on one of the interest categories to remove it and isolate the responses at that level.
+
+If you, for example, double click on 'Not at all interest' you will be able to see that there is a large difference i the proportional interest between those who do not speak english at all and those that speak some to fluent. This suggests that those with no English knowledge are the least by far to participate in research
+
+```{r, warning=FALSE}
+
+# Stacked bar chart for "Annual Income" and "Interest_Label"
+plot1 <- ggplot(data = dat, aes(x = AnnualIncome_Label, fill = interest_Label)) +
+  geom_bar(position = "fill") +
+  xlab("Annual Income") +
+  ylab("Proportion") +
+  ggtitle("Proportional Interest in Clinical Trials by Income") +
+  labs(fill = "Clinical Trial Interest Level") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = c("khaki2", "lemonchiffon1", "#DADAEB", "#9E9AC8", "#6A51A3"))
+
+# Stacked bar chart for "Education" and "Interest_Label"
+plot2 <- ggplot(data = dat, aes(x = Ed_Label, fill = interest_Label)) +
+  geom_bar(position = "fill") +
+  xlab("Education Level") +
+  ylab("Proportion") +
+  ggtitle("Proportional Interest in Clinical Trials by Education Level") +
+  labs(fill = "Clinical Trial Interest Level") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = c("khaki2", "lemonchiffon1", "#DADAEB", "#9E9AC8", "#6A51A3"))
+
+# Stacked bar chart for "EnglishProf_Label" and "Interest_Label"
+plot3 <- ggplot(data = dat, aes(x = EnglishProf_Label, fill = interest_Label)) +
+  geom_bar(position = "fill") +
+  xlab("English Proficiency Label") +
+  ylab("Proportion") +
+  ggtitle("Proportional Interest in Clinical Trials by English Proficiency") +
+  labs(fill = "Clinical Trial Interest Level") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+  scale_fill_manual(values = c("khaki2", "lemonchiffon1", "#DADAEB", "#9E9AC8", "#6A51A3"))
+
+# Stacked bar chart for "HelpMedLit_Label" and "Interest_Label"
+plot4 <- ggplot(data = dat, aes(x = HelpMedLit_Label, fill = interest_Label)) +
+  geom_bar(position = "fill") +
+  xlab("Help with Medical Literacy Label") +
+  ylab("Proportion") +
+  ggtitle("Proportional Interest in Clinical Trials by Help Understanding Medical Literature") +
+  labs(fill = "Clinical Trial Interest Level") +
+  theme_minimal() +
+  theme(axis.text.x = element_text(angle = 45, hjust = 1)) +  
+  scale_fill_manual(values = c("khaki2", "lemonchiffon1", "#DADAEB", "#9E9AC8", "#6A51A3"))
+
+
+plot1_i <- ggplotly(plot1)
+plot2_i <- ggplotly(plot2)
+plot3_i <- ggplotly(plot3)
+plot4_i <- ggplotly(plot4)
+combined_plot <- subplot(plot1_i, plot2_i,plot3_i,plot4_i) %>%
+  layout(title="Interest Level by Income, Education, English Proficiency, Help with Medical Literature",
+         xaxis = list(title = ""),
+         yaxis = list(title = ""),
+         showlegend = TRUE,
+         titlefont = list(size = 10))
+  
+combined_plot
+#couldn't get this to work to toggle
+# buttons <- list(
+#   list(method = "update",
+#        args = list(list(visible = c(TRUE, FALSE, FALSE, FALSE)), list(title = "Income")),
+#        label = "1"),
+#   list(method = "update",
+#        args = list(list(visible = c(FALSE, TRUE, FALSE, FALSE)), list(title = "Education")),
+#        label = "2"),
+#   list(method = "update",
+#        args = list(list(visible = c(FALSE, FALSE, TRUE, FALSE)), list(title = "English Proficiency")),
+#        label = "3"),
+#   
+#   list(method = "update",
+#        args = list(list(visible = c(FALSE, FALSE, FALSE, TRUE)), list(title = "Help with Medical Literature")),
+#        label = "4")
+#   
+# )
+# 
+# combined_plot <- combined_plot %>%
+#   layout(updatemenus = list(list(type = "dropdown")))
+
+
+
+```
+
+### Figure 3.
+
+This interactive heap-map shows Perceived Benefits and Perceived Risks by Education Level and English Proficiency. Education Level is the left column \[Perceived Benefits by Education level in the top left, Perceived Risk by Education level in the bottom left\] and English Proficiency is the right column \[Perceived Benefits by English Proficiency in the top right, Perceived Risk by English Proficiency in the bottom right\].
+
+You can zoom in and out of the plots, drag the plots up and down to view the different combinations. If you hover over any square it will tell you the x y and z statistics for that cell.
+
+```{r,warning=FALSE}
+library(htmltools)
+
+norm_cols <- function(mat) {
+  col_sums <- colSums(mat)
+  mat_normalized <- mat / col_sums[col(mat)]
+  return(mat_normalized)
+}
+
+Risks_ed = table(dat$Risk_Label, dat$Ed_Label)
+Risks_eng = table(dat$Risk_Label, dat$EnglishProf_Label)
+benefits_ed = table(dat$Benefit_Label, dat$Ed_Label)
+benefits_eng = table(dat$Benefit_Label, dat$EnglishProf_Label)
+
+Risks_ed_norm <- norm_cols(Risks_ed)
+Risks_eng_norm <- norm_cols(Risks_eng)
+benefits_ed_norm <- norm_cols(benefits_ed)
+benefits_eng_norm <- norm_cols(benefits_eng)
+
+plot_ed_norm <- plot_ly(z = as.matrix(benefits_ed_norm),
+                        type = "heatmap",
+                        colorscale = "Viridis",
+                        x = colnames(benefits_ed_norm),
+                        y = rownames(benefits_ed_norm))
+
+plot_eng_norm <- plot_ly(z = as.matrix(benefits_eng_norm),
+                         type = "heatmap",
+                         colorscale = "Viridis",
+                         x = colnames(benefits_eng_norm),
+                         y = rownames(benefits_eng_norm))
+
+plot_ed_risk <- plot_ly(z = as.matrix(Risks_ed_norm),
+                        type = "heatmap",
+                        colorscale = "Viridis",
+                        x = colnames(Risks_ed_norm),
+                        y = rownames(Risks_ed_norm))
+
+plot_eng_risk <- plot_ly(z = as.matrix(Risks_eng_norm),
+                         type = "heatmap",
+                         colorscale = "Viridis",
+                         x = colnames(Risks_eng_norm),
+                         y = rownames(Risks_eng_norm))
+
+
+ed_plot <- plotly_build(plot_ed_norm) %>% layout(width = 800, height = 600, xaxis = list(title = "Education Level"))
+eng_plot <- plotly_build(plot_eng_norm) %>% layout(width = 800, height = 600, xaxis = list(title = "English Proficiency"))
+ed_plotr <- plotly_build(plot_ed_risk) %>% layout(width = 800, height = 600, xaxis = list(title = "Education Level"))
+eng_plotr <- plotly_build(plot_eng_risk) %>% layout(width = 800, height = 600, xaxis = list(title = "English Proficiency"))
+
+ed_html <- as_widget(ed_plot)
+eng_html <- as_widget(eng_plot)
+ed_htmlr <- as_widget(ed_plotr)
+eng_htmlr <- as_widget(eng_plotr)
+
+div(
+  div(style = "display: flex;",
+    div(style = "flex: 1; margin-right: 10px;", ed_html),
+    div(style = "flex: 1;", div(legend_ed = list(orientation = 'v'), eng_html))
+  ),
+  div(style = "display: flex;",
+    div(style = "flex: 1; margin-right: 10px;", ed_htmlr),
+    div(style = "flex: 1;", div(legend_risk = list(orientation = 'v'), eng_htmlr))
+  )
+)
+
+```
+
+### Figure 4.
+
+This an interactive map of the US colored by average interest level by state. This provides a visual of how interest in clinical research varies geographically. You can hover over each state to view their statistics.
+
+```{r, warning=FALSE}
+all_states <- map_data("state")
+
+stateData <- left_join(all_states,dat,by="region")
+
+# weighted average interest level
+state_avg_interest <- stateData %>%
+  group_by(State) %>%
+  summarize(
+    total_people = n(),          
+    weighted_avg_interest = sum(interest) / total_people  
+  )
+final_data <- left_join(stateData, state_avg_interest, by = "State")
+gg <- ggplot() +
+  geom_polygon(
+    data = final_data,
+    mapping = aes(x = long, y = lat, group = group, fill = weighted_avg_interest),
+    color = "grey50"
+  ) +
+  scale_fill_gradientn(
+    name = "Interest Level",
+    colors = rev(terrain.colors(100))
+  ) +
+  coord_map() +
+  theme_classic() +
+  theme(
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    legend.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  ) +
+  ggtitle("Average Interest in Clinical Trial Level (0=Not all Interested, 5=Very Interested) by State")
+
+# Convert ggplot to plotly
+conv <-ggplotly(gg)
+
+final_data$text <- paste("State: ", final_data$region, "<br>",
+                         "Income: ", final_data$weighted_avg_income, "<br>",
+                         "Interest Level: ", final_data$weighted_avg_interest)
+
+gg <- ggplot() +
+  geom_polygon(
+    data = final_data,
+    mapping = aes(x = long, y = lat, group = group, fill = weighted_avg_interest, text = text),
+    color = "grey50"
+  ) +
+  scale_fill_gradientn(
+    name = "Interest Level",
+    colors = rev(terrain.colors(100))
+  ) +
+  coord_map() +
+  theme_classic() +
+  theme(
+    axis.ticks.y = element_blank(),
+    axis.text.y = element_blank(),
+    axis.ticks.x = element_blank(),
+    axis.text.x = element_blank(),
+    legend.title = element_text(size = 10),
+    plot.title = element_text(size = 12)
+  ) +
+  ggtitle("Average Interest in Clinical Trial Level (0=Not all Interested, 5=Very Interested) by State")
+
+plotly_gg <- ggplotly(gg, tooltip = "text")
+plotly_gg
+```
+
+### Figure 5.
+
+The plot below shows a scatter plot of the average interest in clinical trial vs average income by State. This interactive scatter plot allows you to hover over each point and see the exact values for the average interest and income and name of that state. There is no clear relationship between income and interest by state.
+
+```{r, warning=FALSE}
+
+# weighted average interest level
+state_avg_interest2 <- dat %>%
+  group_by(State) %>%
+  summarize(
+    total_people = n(),          
+    weighted_avg_interest2 = sum(interest) / total_people  
+  )
+scat <- left_join(dat, state_avg_interest2, by = "State")
+
+# weighted average income level
+state_avg_income <- dat %>%
+  group_by(State) %>%
+  summarize(
+    total_people = n(),          
+    weighted_avg_income = sum(AnnualIncome) / total_people  
+  )
+scat <- left_join(scat, state_avg_income, by = "State")
+
+scatplot <- ggplot(data = scat, aes(x = weighted_avg_interest2, y = weighted_avg_income))  +
+  geom_point(aes(label = State), color = "orange")+
+  labs(x = "Weighted Avg Interest", y = "Weighted Avg Income", 
+       title = "Relationship between Weighted Avg Interest and Income by State") 
+
+
+scatploti <- ggplotly(scatplot)
+scatploti <- layout(scatploti, 
+                           paper_bgcolor = 'lightgray',  
+                           plot_bgcolor = 'lightgray') 
+scatploti
 ```
